@@ -61,6 +61,7 @@ class Query
     response = get('/pl/tp', args)
     trains = parse_timetable_html(response.body)
 
+    puts "FROM: #{from} TO: #{to}\n"
     puts ['Departure', 'Arrival', 'Train'].map { |s| s.ljust(12) }.join
     trains.each {|t| puts t.map { |s| s.ljust(12) }.join }
   end
@@ -76,13 +77,18 @@ end
 
 class Options
   def self.initialize
-    Parser.new do |p|
+    opts = Parser.new do |p|
        p.banner = "PKP timetable"
-       p.option :from, 'departure station', default: ''
-       p.option :to, 'target station', default: ''
+       p.option :from, 'departure station', default: ENV['DEPARTURE_STATION'] || ''
+       p.option :to, 'target station', default: ENV['TARGET_STATION'] || ''
        p.option :hour, 'departure hour', default: Time.now.strftime('%H:%M')
        p.option :date, 'departure date', default: Time.now.strftime('%d.%m.%y')
+       p.option :reverse, 'reverse stations', default: false
     end.process!
+    if opts[:reverse]
+      opts[:from], opts[:to] = opts[:to], opts[:from]
+    end
+    opts
   end
 end
 
