@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 #encoding: utf-8
+require 'date'
 require 'net/http'
 require 'uri'
 require 'nokogiri'
@@ -29,7 +30,7 @@ class Query
     [path, encoded].join('?')
   end
 
-  def timetable(from, to, date, hour)  
+  def timetable(from, to, date, hour)
     args = {
       REQ0HafasChangeTime: '0:1',
       REQ0HafasSearchForw: 1,
@@ -58,9 +59,11 @@ class Query
     response = get('/pl/tp', args)
     trains = parse_timetable_html(response.body)
 
+    puts "\nDATE: #{date}"
     puts "FROM: #{from} TO: #{to}\n"
     puts ['Departure', 'Arrival', 'Train'].map { |s| s.ljust(12) }.join
     trains.each {|t| puts t.map { |s| s.ljust(12) }.join }
+    puts
   end
 
   def parse_timetable_html(html)
@@ -81,10 +84,19 @@ class Options
        p.option :hour, 'departure hour', default: Time.now.strftime('%H:%M')
        p.option :date, 'departure date', default: Time.now.strftime('%d.%m.%y')
        p.option :reverse, 'reverse stations', default: false
+       p.option :next_day, 'next day', default: false
+       p.option :previous_day, 'previous day', default: false
     end.process!
+
     if opts[:reverse]
       opts[:from], opts[:to] = opts[:to], opts[:from]
     end
+    if opts[:next_day]
+      opts[:date] = Date.today.next_day.strftime('%d.%m.%y')
+    elsif opts[:previous_day]
+      opts[:date] = Date.today.prev_day.strftime('%d.%m.%y')
+    end
+
     opts
   end
 end
